@@ -1,12 +1,25 @@
-const babel = require("babel-core");
-const babiliPreset = require("babel-preset-babili");
+const babelCore = require("babel-core");
+const babelPresetBabili = require("babel-preset-babili");
 
 module.exports = function babili(
   input,
+  // Minify options passed to babiliPreset
+  // defaults are handled in preset
   options = {},
-  { minified = true, inputSourceMap = null, sourceMaps = false } = {}
+  // overrides and other options
+  {
+    minified = true,
+    inputSourceMap = null,
+    sourceMaps = false,
+
+    // to override the default babelCore used
+    babel = babelCore,
+
+    // to override the default babiliPreset used
+    babiliPreset = babelPresetBabili
+  } = {}
 ) {
-  const { code, map } = babel.transform({
+  return babel.transform({
     babelrc: false,
     presets: [[babiliPreset, options]],
     comments: false,
@@ -14,9 +27,4 @@ module.exports = function babili(
     sourceMaps,
     minified
   });
-
-  return {
-    code,
-    map
-  };
 };

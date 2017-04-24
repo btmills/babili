@@ -105,7 +105,12 @@ function run(args) {
   });
 
   const inputOpts = Object.keys(argv)
-    .filter(key => argv[key] !== void 0)
+    .filter(key => {
+      if (Array.isArray(argv[key])) {
+        return argv[key].length > 0;
+      }
+      return argv[key] !== void 0;
+    })
     .reduce((acc, cur) => Object.assign(acc, { [cur]: argv[cur] }), {});
 
   const invalidOpts = validate(inputOpts);
