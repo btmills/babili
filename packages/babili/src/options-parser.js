@@ -31,7 +31,7 @@ function dotsToObject(dots) {
     if (rest.length === 1) {
       o[first] = rest[0];
     } else if (rest.length > 1) {
-      if (o[first] === true || Array.isArray(o[first])) {
+      if (!hop(o, first) || o[first] === true) {
         o[first] = {};
       }
       if (o[first] !== false) {
@@ -43,4 +43,8 @@ function dotsToObject(dots) {
   }
 
   return obj;
+}
+
+function hop(o, key) {
+  return Object.prototype.hasOwnProperty.call(o, key);
 }
