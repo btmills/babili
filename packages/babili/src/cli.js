@@ -1,76 +1,120 @@
-const minimist = require("minimist");
-const babili = require("./index");
+const yargsParser = require("yargs-parser");
+// const babili = require("./index");
+const optionsParser = require("./options-parser");
 
-const booleans = [
-  // preset level
-  "evaluate",
+const plugins = [
+  "booleans",
+  "builtIns",
+  "consecutiveAdds",
   "deadcode",
-
-  "unsafe",
-  "unsafe.flipComparisons",
-  "unsafe.simplifyComparisons",
-  "unsafe.guards",
-  "unsafe.typeConstructors",
-
+  "evaluate",
+  "flipComparisons",
+  "guards",
   "infinity",
   "mangle",
-  "numericLiterals",
-  "replace",
-  "simplify",
-  "builtIns",
-
-  "properties",
-  "properties.consecutiveAdds",
-  "properties.memberExpressions",
-  "properties.propertyLiterals",
-
+  "memberExpressions",
   "mergeVars",
-  "booleans",
-  "undefinedToVoid",
+  "numericLiterals",
+  "propertyLiterals",
   "regexpConstructors",
   "removeConsole",
   "removeDebugger",
   "removeUndefined",
-  "keepFnName",
-  "keepClassName",
+  "replace",
+  "simplify",
+  "simplifyComparisons",
+  "typeConstructors",
+  "undefinedToVoid"
+];
 
-  // deadcode
+const proxies = ["keepFnName", "keepClassName"];
+
+const dceBooleanOpts = [
   "deadcode.keepFnName",
   "deadcode.keepFnArgs",
-  "deadcode.keepClassName",
+  "deadcode.keepClassName"
+];
 
-  // mangle
+const mangleBooleanOpts = [
   "mangle.eval",
   "mangle.keepFnName",
   "mangle.topLevel",
-  "mangle.keepClassName",
-
-  // unsafe.typeConstructors
-  "unsafe.typeConstructors.array",
-  "unsafe.typeConstructors.boolean",
-  "unsafe.typeConstructors.number",
-  "unsafe.typeConstructors.object",
-  "unsafe.typeConstructors.string"
+  "mangle.keepClassName"
 ];
 
-function parseConfig(str) {
-  return str.split(",").map(option => option.split("=")).map(option => {
-    const o = [];
-    if (option[0].indexOf(".") > 0) o.push(...option[0].split("."));
-    else o.push(option[0]);
+const mangleArrayOpts = ["mangle.blacklist"];
 
-    if (option[1].toLowerCase() === "true") o.push(true);
-    else if (option[1].toLowerCase() === "false") o.push(false);
-    else {
-      throw new Error("Unsupported option");
-    }
-  });
+const typeConsOpts = [
+  "typeConstructors.array",
+  "typeConstructors.boolean",
+  "typeConstructors.number",
+  "typeConstructors.object",
+  "typeConstructors.string"
+];
+
+function validate(opts) {
+  const allOpts = [
+    ...plugins,
+    ...proxies,
+    ...dceBooleanOpts,
+    ...mangleBooleanOpts,
+    ...typeConsOpts,
+    ...mangleArrayOpts
+  ];
+
+  return Object.keys(opts).filter(
+    opt => opt !== "_" && allOpts.indexOf(opt) === -1
+  );
 }
 
 function run(args) {
-  const argv = minimist(args);
+  const presetOpts = [...plugins, ...proxies];
 
-  console.log(parseConfig(argv.config));
+  const booleanOpts = [
+    ...presetOpts,
+    ...dceBooleanOpts,
+    ...mangleBooleanOpts,
+    ...typeConsOpts
+  ];
+
+  const booleanDefaults = booleanOpts.reduce(
+    (acc, cur) =>
+      Object.assign(acc, {
+        [cur]: void 0
+      }),
+    {}
+  );
+
+  const arrayOpts = [...mangleArrayOpts];
+
+  const arrayDefaults = arrayOpts.reduce(
+    (acc, cur) =>
+      Object.assign(acc, {
+        [cur]: []
+      }),
+    {}
+  );
+
+  const argv = yargsParser(args, {
+    boolean: booleanOpts,
+    array: mangleArrayOpts,
+    default: Object.assign({}, arrayDefaults, booleanDefaults),
+    configuration: {
+      "dot-notation": false
+    }
+  });
+
+  const inputOpts = Object.keys(argv)
+    .filter(key => argv[key] !== void 0)
+    .reduce((acc, cur) => Object.assign(acc, { [cur]: argv[cur] }), {});
+
+  const invalidOpts = validate(inputOpts);
+
+  if (invalidOpts.length > 0) {
+    throw new Error("Invalid Options passed: " + invalidOpts.join(","));
+  }
+
+  console.log(optionsParser(inputOpts));
 }
 
 run(process.argv.slice(2));
