@@ -27,18 +27,15 @@ function dotsToObject(dots) {
   function add(o, first, ...rest) {
     if (rest.length < 1) {
       throw new Error("Option Parse Error");
-    }
-    if (rest.length === 1) {
+    } else if (rest.length === 1) {
       o[first] = rest[0];
-    } else if (rest.length > 1) {
+    } else {
       if (!hop(o, first) || o[first] === true) {
         o[first] = {};
       }
       if (o[first] !== false) {
         add(o[first], ...rest);
       }
-    } else {
-      throw new Error("Panic. Unexpected");
     }
   }
 
