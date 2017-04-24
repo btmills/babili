@@ -1,6 +1,7 @@
 const yargsParser = require("yargs-parser");
 // const babili = require("./index");
 const optionsParser = require("./options-parser");
+const processFiles = require("./fs");
 
 const plugins = [
   "booleans",
@@ -103,6 +104,10 @@ function run(args) {
       "dot-notation": false
     }
   });
+
+  const files = argv["_"];
+
+  // processFiles(files);
 
   const inputOpts = Object.keys(argv)
     .filter(key => {

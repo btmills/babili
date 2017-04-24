@@ -14,6 +14,7 @@ module.exports = {
   rules: {
     "linebreak-style": ["error", "unix"],
     "no-cond-assign": OFF,
-    "no-case-declarations": OFF
+    "no-case-declarations": OFF,
+    "no-console": ["error", { allow: ["error"] }]
   }
 };
