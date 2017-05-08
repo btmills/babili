@@ -75,7 +75,7 @@ function detachOptions(options) {
     fileOpts[k] = options[k];
     delete options[k];
   });
-  delete options["_"];
+
   return { fileOpts, options };
 }
 

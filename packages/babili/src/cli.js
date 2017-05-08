@@ -124,7 +124,16 @@ function run(args) {
   });
 
   const files = argv["_"];
-  // const stdin = argv["stdin"] || !files.length;
+  const stdin = argv["stdin"];
+  const errors = [];
+
+  if (files.length === 0 && !stdin) {
+    errors.push("Provide filenames/dir or pass --stdin as option");
+  }
+
+  if (argv.outFile && argv.outDir) {
+    errors.push("Cannot have out-file and out-dir");
+  }
 
   const inputOpts = Object.keys(argv)
     .filter(key => {
@@ -138,11 +147,18 @@ function run(args) {
   const invalidOpts = validate(inputOpts);
 
   if (invalidOpts.length > 0) {
-    throw new Error("Invalid Options passed: " + invalidOpts.join(","));
+    errors.push("Invalid Options passed: " + invalidOpts.join(","));
   }
+
+  if (errors.length > 0) {
+    console.error(errors.join("\n"));
+    process.exit(0);
+  }
+
   const options = optionsParser(inputOpts);
 
-  // delete unncessary options to babili
+  // delete unncessary options to babili preset
+  delete options["_"];
   delete options.d;
   delete options["out-dir"];
   delete options.o;
