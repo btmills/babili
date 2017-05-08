@@ -1,32 +1,83 @@
 const fs = require("fs");
 const path = require("path");
-const glob = require("glob");
+const readdir = require("fs-readdir-recursive");
+const outputFileSync = require("output-file-sync");
 const babili = require("./");
-const EXTENSION = ".js";
+const EXTENSIONS = [".js", ".mjs"];
 
-module.exports.validateFiles = function(list) {
-  let filenames = list.reduce(function(globbed, input) {
-    let files = glob.sync(input);
-    if (!files.length) files = [input];
-    return globbed.concat(files);
-  }, []);
-  return filenames;
-};
-
-module.exports.processFiles = function(fileList, { stdin, output }) {
+module.exports.processFiles = function(fileList, options) {
+  const { fileOpts, options: babiliOpts } = detachOptions(options);
+  const { stdin, outFile, outDir } = fileOpts;
   if (stdin) {
     readStdin().then(input => {
-      let { code } = babili(input);
-      if (!output) {
+      let { code } = babili(input, babiliOpts);
+      // write to console if ouput file is not specified
+      if (outFile === void 0) {
         process.stdout.write(code);
       } else {
-        fs.writeFileSync(path.resolve(output, "output.min.js"), code, "utf-8");
+        fs.writeFileSync(path.resolve(outDir), code, "utf-8");
       }
     });
   } else {
-    walkSync(fileList);
+    for (let filename of fileList) {
+      handle(filename, fileOpts, babiliOpts);
+    }
   }
 };
+
+function handle(filename, fileOpts, babiliOpts) {
+  if (!fs.existsSync(filename)) return;
+
+  const { outFile } = fileOpts;
+  if (outFile !== undefined) {
+    transform(filename, outFile, babiliOpts);
+    return;
+  }
+
+  const stat = fs.statSync(filename);
+  if (stat.isDirectory()) {
+    const dirname = filename;
+    readdir(dirname).forEach(filename => {
+      const src = path.join(dirname, filename);
+      handleFile(src, filename, fileOpts, babiliOpts);
+    });
+  } else {
+    handleFile(filename, filename, fileOpts, babiliOpts);
+  }
+}
+
+function handleFile(src, relative, fileOpts, babiliOpts) {
+  const ext = getValidFileExt(relative);
+  if (ext === undefined) {
+    return;
+  }
+  const { outDir } = fileOpts;
+  let dest;
+  const filename = getFileName(relative, ext);
+  if (outDir) {
+    dest = path.join(outDir, path.dirname(relative), filename);
+  } else {
+    dest = path.join(path.dirname(src), filename);
+  }
+  transform(src, dest, babiliOpts);
+}
+
+function transform(src, dest, babiliOpts) {
+  const input = fs.readFileSync(src, "utf-8");
+  const { code } = babili(input, babiliOpts);
+  outputFileSync(dest, code, "utf-8");
+}
+
+function detachOptions(options) {
+  const cliOpts = ["stdin", "outFile", "outDir"];
+  const fileOpts = {};
+  cliOpts.forEach(k => {
+    fileOpts[k] = options[k];
+    delete options[k];
+  });
+  delete options["_"];
+  return { fileOpts, options };
+}
 
 function readStdin() {
   let code = "";
@@ -46,37 +97,19 @@ function readStdin() {
   });
 }
 
-function walkSync(fileList, dirPath = "./") {
-  for (let filePath of fileList) {
-    const resolvedPath = path.resolve(dirPath, filePath);
-    const stat = fs.statSync(resolvedPath);
-    if (stat.isDirectory()) {
-      let list = fs.readdirSync(resolvedPath);
-      walkSync(list, resolvedPath);
-    } else {
-      transformFile(dirPath, resolvedPath);
-    }
+function getValidFileExt(filename) {
+  const ext = path.extname(filename);
+  const isValidExt = EXTENSIONS.some(e => e.indexOf(ext) >= 0);
+
+  if (isValidExt) {
+    return ext;
   }
+  return "";
 }
 
-function getFileName(filePath) {
-  const filename = path.basename(filePath, EXTENSION);
-  return `${filename}.min${EXTENSION}`;
-}
-
-function transformFile(dirPath, filePath) {
-  let input;
-  const fileName = getFileName(filePath);
-  try {
-    input = fs.readFileSync(filePath, "utf-8");
-  } catch (err) {
-    console.error("Unable to read file: " + fileName + "\n" + err);
-    return;
-  }
-  let { code } = babili(input);
-  try {
-    fs.writeFileSync(path.join(dirPath, fileName), code, "utf-8");
-  } catch (err) {
-    console.error("Unable to write file: " + fileName + "\n" + err);
-  }
+function getFileName(filePath, ext) {
+  const filename = path.basename(filePath, ext);
+  return filename.indexOf(".min") >= 0
+    ? path.basename(filename, ".min")
+    : `${filename}.min${ext}`;
 }

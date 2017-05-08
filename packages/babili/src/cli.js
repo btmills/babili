@@ -1,7 +1,6 @@
 const yargsParser = require("yargs-parser");
-// const babili = require("./index");
 const optionsParser = require("./options-parser");
-const { validateFiles, processFiles } = require("./fs");
+const { processFiles } = require("./fs");
 
 const plugins = [
   "booleans",
@@ -55,6 +54,17 @@ const typeConsOpts = [
 
 const cliBooleanOpts = ["stdin", "help", "version"];
 const cliOpts = ["out-file", "out-dir"];
+const alias = {
+  outFile: "o",
+  outDir: "d"
+};
+
+function aliasArr(obj) {
+  const r = Object.keys(obj).reduce((acc, val) => {
+    return acc.concat(val, obj[val]);
+  }, []);
+  return r;
+}
 
 function validate(opts) {
   const allOpts = [
@@ -65,7 +75,8 @@ function validate(opts) {
     ...typeConsOpts,
     ...mangleArrayOpts,
     ...cliBooleanOpts,
-    ...cliOpts
+    ...cliOpts,
+    ...aliasArr(alias)
   ];
 
   return Object.keys(opts).filter(
@@ -102,10 +113,6 @@ function run(args) {
     {}
   );
 
-  const alias = {
-    output: "o"
-  };
-
   const argv = yargsParser(args, {
     boolean: booleanOpts,
     array: mangleArrayOpts,
@@ -117,10 +124,7 @@ function run(args) {
   });
 
   const files = argv["_"];
-  // const filenames = validateFiles(files);
-
-  const stdin = argv["stdin"] || !files.length;
-  const output = argv["output"];
+  // const stdin = argv["stdin"] || !files.length;
 
   const inputOpts = Object.keys(argv)
     .filter(key => {
@@ -136,10 +140,15 @@ function run(args) {
   if (invalidOpts.length > 0) {
     throw new Error("Invalid Options passed: " + invalidOpts.join(","));
   }
+  const options = optionsParser(inputOpts);
 
-  // console.log(optionsParser(inputOpts));
+  // delete unncessary options to babili
+  delete options.d;
+  delete options["out-dir"];
+  delete options.o;
+  delete options["out-file"];
 
-  // processFiles(files, { stdin, output });
+  processFiles(files, options);
 }
 
 run(process.argv.slice(2));
