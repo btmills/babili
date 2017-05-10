@@ -66,6 +66,20 @@ function aliasArr(obj) {
   return r;
 }
 
+function printHelpInfo() {
+  process.stdout.write(
+    `Usage: babili index.js [options]
+
+  Options:
+    --mangle    Context and scope aware variable renaming
+
+    --simplify  Simplifies code for minification by reducing statements into
+                expressions and making expressions uniform where possible
+
+  `
+  );
+}
+
 function validate(opts) {
   const allOpts = [
     ...plugins,
@@ -126,6 +140,11 @@ function run(args) {
   const files = argv["_"];
   const stdin = argv["stdin"];
   const errors = [];
+
+  if (argv.help) {
+    printHelpInfo();
+    return;
+  }
 
   if (files.length === 0 && !stdin) {
     errors.push("Provide filenames/dir or pass --stdin as option");
