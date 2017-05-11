@@ -1,5 +1,6 @@
 const yargsParser = require("yargs-parser");
 const optionsParser = require("./options-parser");
+const { version } = require("../package.json");
 const { processFiles } = require("./fs");
 
 const plugins = [
@@ -67,17 +68,49 @@ function aliasArr(obj) {
 }
 
 function printHelpInfo() {
-  process.stdout.write(
-    `Usage: babili index.js [options]
+  const msg = `
+  Usage: babili index.js [options]
 
   Options:
-    --mangle    Context and scope aware variable renaming
+    --out-file, -o          Output to a specific file
 
-    --simplify  Simplifies code for minification by reducing statements into
-                expressions and making expressions uniform where possible
+    --out-dir, -d           Output to a specific directory
 
-  `
-  );
+    --mangle                Context and scope aware variable renaming
+
+    --simplify              Simplifies code for minification by reducing statements into
+                            expressions
+
+    --booleans              Transform boolean literals into !0 for true and !1 for false
+
+    --builtIns              Minify standard built-in objects
+
+    --consecutiveAdds       Inlines consecutive property assignments, array pushes, etc.
+
+    --deadcode              Inlines bindings and tries to evaluate expressions.
+
+    --evaluate              Tries to evaluate expressions and inline the result. Deals with
+                            numbers and strings
+
+    --flipComparisons       Optimize code for repetition-based compression algorithms such as gzip.
+
+    --infinity              Minify Infinity to 1/0
+
+    --memberExpressions     Convert valid member expression property literals into plain identifiers
+
+    --mergeVars             Merge sibling variables into single variable declaration
+
+    --numericLiterals       Shortening of numeric literals via scientific notation
+
+    --propertyLiterals      Transform valid identifier property key literals into identifiers
+
+  `;
+  log(msg);
+}
+
+function log(msg) {
+  process.stdout.write(msg);
+  process.exit(0);
 }
 
 function validate(opts) {
@@ -138,7 +171,7 @@ function run(args) {
   });
 
   const files = argv["_"];
-  const stdin = argv["stdin"];
+  argv["stdin"] = argv["stdin"] || !files.length;
   const errors = [];
 
   if (argv.help) {
@@ -146,8 +179,9 @@ function run(args) {
     return;
   }
 
-  if (files.length === 0 && !stdin) {
-    errors.push("Provide filenames/dir or pass --stdin as option");
+  if (argv.version) {
+    log(version);
+    return;
   }
 
   if (argv.outFile && argv.outDir) {
@@ -170,8 +204,7 @@ function run(args) {
   }
 
   if (errors.length > 0) {
-    console.error(errors.join("\n"));
-    process.exit(0);
+    log(errors.join("\n"));
   }
 
   const options = optionsParser(inputOpts);
