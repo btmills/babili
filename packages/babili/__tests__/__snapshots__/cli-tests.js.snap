@@ -1,24 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Babili CLI should show help for --help 1`] = `
-"Usage: babili index.js [options]
+exports[`Babili CLI should read from stdin and o/p to stdout 1`] = `"let a=10,b=20;"`;
 
-  Options:
-    --mangle    Context and scope aware variable renaming
-
-    --simplify  Simplifies code for minification by reducing statements into
-                expressions and making expressions uniform where possible
-
-  "
-`;
-
-exports[`Babili CLI should throw error if no option is provided 1`] = `
-"Provide filenames/dir or pass --stdin as option
-"
-`;
-
-exports[`Babili CLI should throw on invalid options 1`] = `
-"Provide filenames/dir or pass --stdin as option
-Invalid Options passed: foo
-"
-`;
+exports[`Babili CLI should throw on all invalid options 1`] = `"Invalid Options passed: foo,bar"`;

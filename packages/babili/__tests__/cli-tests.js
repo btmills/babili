@@ -1,50 +1,33 @@
 jest.autoMockOff();
 
-const { execFile } = require("child_process");
-const babiliCli = require.resolve("../lib/cli");
+const { execFileSync } = require("child_process");
+const babiliCli = require.resolve("../bin/babili");
 
-function exec(...options) {
-  return new Promise((resolve, reject) => {
-    execFile(
-      "node",
-      [`${babiliCli}`].concat(options),
-      (err, stdout, stderr) => {
-        if (err) {
-          return reject(err);
-        }
-        if (stdout) {
-          return resolve(stdout);
-        }
-        resolve(stderr);
-      }
-    );
-  });
+function exec(stdin, ...opts) {
+  let options = { encoding: "utf-8" };
+  if (stdin !== "") {
+    options = Object.assign(options, {
+      input: stdin
+    });
+  }
+  return execFileSync(`${babiliCli}`, [].concat(opts), options);
 }
 
 describe("Babili CLI", () => {
-  it("should throw error if no option is provided", () => {
-    return exec().then(output => {
-      expect(output).toMatchSnapshot();
-    });
-  });
-
-  it("should throw on invalid options", () => {
-    return exec("--foo").then(output => {
-      expect(output).toMatchSnapshot();
-    });
-  });
-
   it("should show help for --help", () => {
-    return exec("--help").then(output => {
-      expect(output).toMatchSnapshot();
-    });
+    expect(exec("", "--help")).toBeDefined();
   });
 
-  // TODO - fix
-  xit("should print to stdout if --stdin is specified", () => {
+  it("should show version for --vevrsion", () => {
+    expect(exec("", "--version")).toBeDefined();
+  });
+
+  it("should throw on all invalid options", () => {
+    expect(exec("", "--foo", "--bar")).toMatchSnapshot();
+  });
+
+  it("should read from stdin and o/p to stdout", () => {
     let source = "let abcd = 10, bcdsa = 20";
-    return exec("--mangle", "--stdin", `${source}`).then(output => {
-      expect(output).toMatchSnapshot();
-    });
+    expect(exec(source, "--mangle.topLevel")).toMatchSnapshot();
   });
 });
