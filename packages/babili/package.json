@@ -19,5 +19,7 @@
     "babel-preset-babili": "^0.0.12",
     "yargs-parser": "^5.0.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "rimraf": "^2.6.1"
+  }
 }

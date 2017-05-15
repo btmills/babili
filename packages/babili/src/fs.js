@@ -108,8 +108,7 @@ function getValidFileExt(filename) {
 }
 
 function getFileName(filePath, ext) {
-  const filename = path.basename(filePath, ext);
-  return filename.indexOf(".min") >= 0
-    ? path.basename(filename, ".min")
-    : `${filename}.min${ext}`;
+  let filename = path.basename(filePath, ext);
+  filename = filename.indexOf(".min") >= 0 ? filename : `${filename}.min`;
+  return `${filename}${ext}`;
 }
