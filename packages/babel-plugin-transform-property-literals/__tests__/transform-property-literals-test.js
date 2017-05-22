@@ -24,48 +24,72 @@ describe("transform-property-literals-plugin", () => {
   });
 
   it("should not strip necessaary quotes for numeric like things", () => {
-    const source = unpad(
-      `
+    const source = unpad(`
       var data = {
         "00": 1,
         "01": 2
       };
-    `
-    );
+    `);
     expect(transform(source)).toBe(source);
   });
 
   it("should not transform invalid identifiers", () => {
-    const source = unpad(
-      `
+    const source = unpad(`
       ({
         "default": null,
         "import": null
       });
-    `
-    );
-    expect(transform(source)).toBe(source);
+    `);
+    const expected = unpad(`
+      ({
+        default: null,
+        import: null
+      });
+    `);
+    expect(transform(source)).toBe(expected);
   });
 
   it("should not transform non-string properties", () => {
-    const source = unpad(
-      `
+    const source = unpad(`
       ({
         foo: null
       });
-    `
-    );
+    `);
     expect(transform(source)).toBe(source);
   });
 
   it("should not transform propety keys that are computed", () => {
-    const source = unpad(
-      `
+    const source = unpad(`
       ({
         [a]: null
       });
-    `
-    );
+    `);
     expect(transform(source)).toBe(source);
+  });
+
+  it("should not transform invalid es5 property names", () => {
+    const source = unpad(`
+      ({
+        "\u2118": "wp",
+        "𐊧": "foo"
+      });
+    `);
+    expect(transform(source)).toBe(source);
+  });
+
+  it("should transform valid ES5 unicodes as property names", () => {
+    const source = unpad(`
+      ({
+        "ಠ_ಠ": "bar",
+        "12e34": "wut"
+      })
+    `);
+    const expected = unpad(`
+      ({
+        ಠ_ಠ: "bar",
+        12e34: "wut"
+      });
+    `);
+    expect(transform(source)).toBe(expected);
   });
 });
